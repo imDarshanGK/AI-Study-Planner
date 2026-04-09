@@ -20,6 +20,7 @@ It helps students plan subjects, deadlines, and available time while generating 
 - Daily timetable
 - Priority-scored tasks
 - Due-soon reminders
+- Completion probability estimates for pending tasks
 
 ### Tracks
 - Study streak
@@ -27,6 +28,7 @@ It helps students plan subjects, deadlines, and available time while generating 
 
 ### Recommends
 - Next best task automatically
+- Behavior-aware recommendation text (priority + weak-subject + low recent focus)
 
 ## Core Features Included
 - Task input system
@@ -41,7 +43,16 @@ Current base priority starts simple:
 
 Priority = deadline pressure + difficulty + importance + workload factor
 
-Then it can add a small machine-learning adjustment when enough completed tasks exist (using scikit-learn LinearRegression).
+Then the app upgrades with real ML models:
+- Linear Regression: learns score adjustment from completed task outcomes
+- Random Forest Classifier: predicts completion probability using
+	- difficulty
+	- importance
+	- days left
+	- estimated hours
+	- current logged progress ratio
+
+The final ranking combines heuristic urgency + learned score adjustment + risk boost from low completion probability.
 
 ## Tech Stack
 - Python
@@ -72,6 +83,7 @@ streamlit run app.py
 ## Notes
 - This is intentionally a practical basic-to-intermediate build suitable for internship applications.
 - It does not claim advanced reinforcement learning; that can be added later as an upgrade.
+- SQLite now stores tasks, study sessions, and progress events.
 
 ## Next Upgrade Ideas
 - User login/authentication

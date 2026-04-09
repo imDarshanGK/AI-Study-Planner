@@ -49,6 +49,37 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS progress_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                task_id INTEGER,
+                subject TEXT,
+                value REAL,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(task_id) REFERENCES tasks(id)
+            )
+            """
+        )
+
+
+def _log_progress_event(
+    event_type: str,
+    task_id: int | None = None,
+    subject: str | None = None,
+    value: float | None = None,
+    notes: str | None = None,
+) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO progress_events(event_type, task_id, subject, value, notes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (event_type, task_id, subject, value, notes, datetime.utcnow().isoformat()),
+        )
 
 
 def add_task(
@@ -59,6 +90,8 @@ def add_task(
     importance: int,
     estimated_hours: float,
 ) -> None:
+    normalized_subject = subject.strip()
+    normalized_title = title.strip()
     with get_conn() as conn:
         conn.execute(
             """
@@ -66,8 +99,8 @@ def add_task(
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                subject.strip(),
-                title.strip(),
+                normalized_subject,
+                normalized_title,
                 deadline.isoformat(),
                 difficulty,
                 importance,
@@ -75,6 +108,12 @@ def add_task(
                 datetime.utcnow().isoformat(),
             ),
         )
+    _log_progress_event(
+        event_type="task_added",
+        subject=normalized_subject,
+        value=estimated_hours,
+        notes=f"{normalized_title} (deadline {deadline.isoformat()})",
+    )
 
 
 def list_tasks(status: str | None = None) -> list[dict]:
@@ -99,7 +138,9 @@ def list_tasks(status: str | None = None) -> list[dict]:
 
 
 def mark_task_completed(task_id: int) -> None:
+    subject: str | None = None
     with get_conn() as conn:
+        row = conn.execute("SELECT subject, title FROM tasks WHERE id = ?", (task_id,)).fetchone()
         conn.execute(
             """
             UPDATE tasks
@@ -108,17 +149,36 @@ def mark_task_completed(task_id: int) -> None:
             """,
             (datetime.utcnow().isoformat(), task_id),
         )
+        if row:
+            subject = row["subject"]
+            title = row["title"]
+        else:
+            title = ""
+    _log_progress_event(
+        event_type="task_completed",
+        task_id=task_id,
+        subject=subject,
+        notes=title,
+    )
 
 
 def log_study_session(task_id: int | None, subject: str, study_date: date, hours: float) -> None:
+    normalized_subject = subject.strip()
     with get_conn() as conn:
         conn.execute(
             """
             INSERT INTO study_logs(task_id, subject, study_date, hours)
             VALUES (?, ?, ?, ?)
             """,
-            (task_id, subject.strip(), study_date.isoformat(), hours),
+            (task_id, normalized_subject, study_date.isoformat(), hours),
         )
+    _log_progress_event(
+        event_type="study_session_logged",
+        task_id=task_id,
+        subject=normalized_subject,
+        value=hours,
+        notes=study_date.isoformat(),
+    )
 
 
 def get_setting(key: str, default: str) -> str:
@@ -206,3 +266,19 @@ def get_subject_performance() -> list[dict]:
             }
         )
     return result
+
+
+def get_recent_subject_hours(days: int = 7) -> list[dict]:
+    start_day = (date.today() - timedelta(days=days - 1)).isoformat()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT subject, COALESCE(SUM(hours), 0) AS total_hours
+            FROM study_logs
+            WHERE date(study_date) >= date(?)
+            GROUP BY subject
+            ORDER BY total_hours ASC
+            """,
+            (start_day,),
+        ).fetchall()
+    return [dict(row) for row in rows]

@@ -7,6 +7,7 @@ from ai_engine import recommend_next_task, score_tasks
 from db import (
     add_task,
     get_due_reminders,
+    get_recent_subject_hours,
     get_setting,
     get_study_streak,
     get_subject_performance,
@@ -61,16 +62,19 @@ with st.form("add_task_form"):
 
 pending_tasks = list_tasks("pending")
 completed_tasks = list_tasks("completed")
-scored_tasks = score_tasks(pending_tasks, completed_tasks)
-recommendation = recommend_next_task(scored_tasks)
+all_tasks = list_tasks(None)
+scored_tasks = score_tasks(pending_tasks, completed_tasks, all_tasks)
 reminders = get_due_reminders(days_ahead=2)
 streak_days = get_study_streak()
 subject_stats = get_subject_performance()
+recent_subject_hours = get_recent_subject_hours(days=7)
 
 weak_subject = "None"
 if subject_stats:
     weak_row = min(subject_stats, key=lambda row: row["completion_rate"])
     weak_subject = weak_row["subject"]
+
+recommendation, recommendation_message = recommend_next_task(scored_tasks, weak_subject, recent_subject_hours)
 
 st.subheader("2) Dashboard")
 metric_1, metric_2, metric_3, metric_4 = st.columns(4)
@@ -98,6 +102,7 @@ if scored_tasks:
             "logged_hours",
             "remaining_hours",
             "priority_score",
+            "completion_probability",
         ]
     ]
     st.dataframe(priority_df, use_container_width=True)
@@ -114,12 +119,14 @@ else:
 
 st.subheader("5) Smart Recommendation")
 if recommendation:
-    st.success(
-        f"Next task: {recommendation['subject']} - {recommendation['title']}"
-        f" | score {recommendation['priority_score']} | remaining {recommendation['remaining_hours']}h"
+    st.success(recommendation_message)
+    st.write(
+        f"AI score: {recommendation['priority_score']} | "
+        f"completion probability: {recommendation['completion_probability']} | "
+        f"remaining: {recommendation['remaining_hours']}h"
     )
 else:
-    st.info("No recommendation available.")
+    st.info(recommendation_message)
 
 st.subheader("6) Progress Tracking")
 action_col_1, action_col_2 = st.columns(2)
