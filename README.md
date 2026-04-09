@@ -4,7 +4,7 @@ AI Study Planner is a real, working internship-ready project that combines:
 - Python backend logic
 - Streamlit user interface
 - SQLite persistence
-- Basic machine learning with scikit-learn
+- Real machine learning with scikit-learn
 
 It helps students plan subjects, deadlines, and available time while generating a daily study strategy.
 
@@ -54,6 +54,8 @@ Then the app upgrades with real ML models:
 
 The final ranking combines heuristic urgency + learned score adjustment + risk boost from low completion probability.
 
+This is the actual AI part of the project: task ranking, completion prediction, and recommendation reasoning are data-driven, not static UI text.
+
 ## Tech Stack
 - Python
 - Streamlit
@@ -90,3 +92,20 @@ streamlit run app.py
 - Dashboard charts
 - FastAPI backend split
 - Deployment on Render or Railway
+
+## Deployment
+
+This repo now includes a Render deployment config in [render.yaml](render.yaml).
+
+Render start command:
+
+```bash
+streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
+```
+
+Deployment steps:
+1. Push this repo to GitHub.
+2. Create a new Web Service on Render.
+3. Connect the GitHub repo.
+4. Use the provided build and start commands.
+5. Deploy and open the live URL.
