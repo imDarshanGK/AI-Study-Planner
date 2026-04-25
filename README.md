@@ -1,6 +1,6 @@
 # AI Study Planner
 
-AI Study Planner is a real, working internship-ready project that combines:
+AI Study Planner is a real, working project that combines:
 - Python backend logic
 - Streamlit user interface
 - SQLite persistence
@@ -83,7 +83,7 @@ streamlit run app.py
 ```
 
 ## Notes
-- This is intentionally a practical basic-to-intermediate build suitable for internship applications.
+- This is intentionally a practical basic-to-intermediate build suitable for real-world applications.
 - It does not claim advanced reinforcement learning; that can be added later as an upgrade.
 - SQLite now stores tasks, study sessions, and progress events.
 
