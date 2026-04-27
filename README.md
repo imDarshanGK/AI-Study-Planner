@@ -1,3 +1,91 @@
+AI Study Planner
+=================
+
+AI Study Planner is a concise, practical study-planning application intended as a portfolio-ready project. It demonstrates a complete Python-based workflow: a Streamlit user interface, SQLite persistence, and lightweight machine learning with scikit-learn to produce data-driven recommendations.
+
+This repository contains a working MVP focused on clear, verifiable functionality — task capture, priority scoring, timetable generation, study logging, and evidence-based recommendations.
+
+Key Features
+------------
+
+- Task capture: subject, title, deadline, difficulty, importance, and estimated hours.
+- AI-driven priority scoring: heuristic urgency combined with a learned adjustment from historical data.
+- Completion probability: a classifier estimates task completion risk to surface at-risk items.
+- Auto timetable: allocates available daily study hours across upcoming days.
+- Progress tracking: study session logs, streaks, and subject performance analytics.
+- CSV export: download tasks and session logs for offline analysis.
+
+Why this project
+----------------
+
+This project is deliberately scoped to be practical and demonstrable in interviews: it shows end-to-end design, basic production considerations (dependency pinning and a deploy config), and a small applied ML pipeline that uses real usage data rather than fabricated claims.
+
+Technical Overview
+------------------
+
+- Language: Python 3.10+
+- UI: Streamlit
+- ML: scikit-learn (LinearRegression for score adjustment; RandomForestClassifier for completion probability)
+- Storage: SQLite
+- Data tooling: pandas for CSV export and simple analytics
+
+Repository Layout
+-----------------
+
+- `app.py` — Streamlit application and UI flows (planning, execution, analytics).
+- `db.py` — SQLite schema, migrations, and data access helpers.
+- `ai_engine.py` — priority scoring, model training, and recommendation logic.
+- `scheduler.py` — timetable generation utilities.
+- `requirements.txt` — Python dependencies.
+- `render.yaml` — optional Render deployment configuration.
+
+Quickstart (local)
+------------------
+
+1. Create and activate a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies and run the app
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+3. Open http://localhost:8501 in your browser.
+
+Deployment notes
+----------------
+
+The repository includes a `render.yaml` and a Streamlit start command that uses the `$PORT` environment variable. For basic deploy steps:
+
+1. Push the repository to a Git provider (e.g. GitHub).
+2. Create a new Web Service on a host such as Render, Railway, or another cloud provider.
+3. Ensure the start command uses: `streamlit run app.py --server.address 0.0.0.0 --server.port $PORT`.
+
+If you prefer Docker, containerize the app and expose the port expected by your hosting provider.
+
+Development & Extension Ideas
+-----------------------------
+
+- Add user authentication and per-user data isolation.
+- Replace SQLite with a managed database for multi-user deployments.
+- Add a lightweight API (FastAPI) to separate backend logic from the Streamlit frontend.
+- Improve model training workflows (online updates, persistent model artifacts).
+
+Contributing
+------------
+
+Contributions are welcome. Please open issues for bug reports or feature requests and submit focused pull requests for changes.
+
+License
+-------
+
+MIT — see the `LICENSE` file for details.
 # AI Study Planner
 
 AI Study Planner — a compact, practical study planning app that demonstrates a full-stack workflow:
@@ -7,7 +95,7 @@ AI Study Planner — a compact, practical study planning app that demonstrates a
 - SQLite persistence
 - Real machine learning with scikit-learn
 
-Live demo: https://studora-app.onrender.com/
+Live demo: https://studora-app.onrender.com
 
 This repository contains a working MVP you can run locally or deploy to a simple cloud host. It focuses on real features (no fake claims): task input, priority scoring, timetable generation, study logging, and behavior-aware recommendations.
 ## Overview
