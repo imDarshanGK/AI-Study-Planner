@@ -7,6 +7,8 @@ AI Study Planner — a compact, practical study planning app that demonstrates a
 - SQLite persistence
 - Real machine learning with scikit-learn
 
+Live demo: https://studora-app.onrender.com/
+
 This repository contains a working MVP you can run locally or deploy to a simple cloud host. It focuses on real features (no fake claims): task input, priority scoring, timetable generation, study logging, and behavior-aware recommendations.
 ## Overview
 
@@ -71,14 +73,7 @@ Recommended quick option: Render (auto-deploy from GitHub). The repo already inc
 
 Other options: Railway, Heroku (requires Procfile), Docker on any host.
 
-## Screenshots
-
-Add screenshots to the repo under `images/` and reference them in this README. Example:
-
-```md
-![Dashboard screenshot](images/dashboard.png)
-```
-
+*Screenshots: available on the live demo linked above.*
 ## What to include in your portfolio write-up
 
 - Short problem statement (what the app solves)
