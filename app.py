@@ -20,7 +20,7 @@ from db import (
 )
 from scheduler import generate_timetable
 
-st.set_page_config(page_title="AI Study Planner", layout="wide")
+st.set_page_config(page_title="AI Study Planner", page_icon="images/favicon.svg", layout="wide")
 init_db()
 
 st.markdown(
