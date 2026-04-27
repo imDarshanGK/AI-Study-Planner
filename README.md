@@ -1,6 +1,85 @@
 AI Study Planner
 =================
 
+AI Study Planner is a compact, professional study-planning prototype intended for technical portfolios and interviews. It demonstrates an end-to-end Python workflow: a Streamlit frontend, SQLite persistence, and a lightweight scikit-learn pipeline for data-driven recommendations.
+
+Features
+--------
+
+- Capture tasks with subject, title, deadline, difficulty, importance, and estimated hours.
+- Priority scoring that combines a heuristic urgency metric with a learned adjustment from historical data.
+- Completion-risk estimation to surface at-risk tasks.
+- Auto timetable generation that allocates daily study time across upcoming days.
+- Study session logging, streaks, and subject performance analytics.
+- CSV export for tasks and session logs.
+
+Technical Summary
+-----------------
+
+- Python 3.10+
+- Streamlit UI (`app.py`)
+- SQLite persistence (`db.py`)
+- ML: scikit-learn (LinearRegression, RandomForestClassifier) (`ai_engine.py`)
+- Timetable generator (`scheduler.py`)
+- Data tooling: pandas
+
+Repository Layout
+-----------------
+
+- `app.py` — Streamlit application and UI flows (planning, execution, analytics)
+- `db.py` — SQLite schema and data access helpers
+- `ai_engine.py` — priority scoring, model training, and recommendation logic
+- `scheduler.py` — timetable generation utilities
+- `requirements.txt` — Python dependencies
+- `render.yaml` — optional Render deploy configuration
+
+Quickstart (local)
+------------------
+
+1. Create and activate a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies and run the app
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+3. Open http://localhost:8501 in your browser.
+
+Deployment Notes
+----------------
+
+The repository includes an optional `render.yaml`. For most hosts ensure the start command uses:
+
+```bash
+streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
+```
+
+Development Ideas
+-----------------
+
+- Add per-user authentication and persistent model artifacts for production use.
+- Replace SQLite with a managed database for multi-user deployments.
+- Separate API (FastAPI) from the Streamlit frontend for a production-grade architecture.
+
+Contributing
+------------
+
+Contributions welcome. Open an issue for bugs or feature requests and submit focused pull requests.
+
+License
+-------
+
+MIT — see the `LICENSE` file for details.
+AI Study Planner
+=================
+
 AI Study Planner is a concise, practical study-planning application intended as a portfolio-ready project. It demonstrates a complete Python-based workflow: a Streamlit user interface, SQLite persistence, and lightweight machine learning with scikit-learn to produce data-driven recommendations.
 
 This repository contains a working MVP focused on clear, verifiable functionality — task capture, priority scoring, timetable generation, study logging, and evidence-based recommendations.
