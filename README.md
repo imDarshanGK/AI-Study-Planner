@@ -1,29 +1,38 @@
 AI Study Planner
 =================
 
-AI Study Planner is a practical study-planning app built with Python, Streamlit, SQLite, and scikit-learn. It is intended as a portfolio-ready project that demonstrates task planning, priority scoring, timetable generation, study tracking, and simple machine learning for recommendations.
+AI Study Planner is a zero-fuss study planning app built with Python, Streamlit, SQLite, and scikit-learn. It turns tasks, deadlines, and available study time into a practical daily plan with simple machine-learning-based scoring.
+
+Task planning, priority scoring, timetable generation, study logging, and recommendation support are all included in one small project.
 
 Features
 --------
 
 - Add tasks with subject, title, deadline, difficulty, importance, and estimated hours.
-- Score task priority using urgency, workload, and learned adjustments from past data.
+- Rank tasks by urgency and learned priority adjustment from historical data.
 - Estimate completion risk for pending tasks.
-- Generate a daily study timetable from available hours.
+- Generate a daily timetable from available study hours.
 - Log study sessions and review progress over time.
 - Export tasks and study logs as CSV.
 
-Technical Summary
------------------
+How it works
+------------
+
+1. The app computes a heuristic priority score from deadline pressure, difficulty, importance, and estimated workload.
+2. When enough history exists, scikit-learn models refine the score and estimate completion probability.
+3. The scheduler spreads study time across upcoming days based on the final priority order.
+4. Study logs and task updates feed the next recommendation cycle.
+
+Tech Stack
+----------
 
 - Python 3.10+
-- Streamlit UI in `app.py`
-- SQLite persistence in `db.py`
-- scikit-learn models in `ai_engine.py`
-- Timetable generation in `scheduler.py`
+- Streamlit for the UI
+- SQLite for persistence
+- scikit-learn for scoring and prediction
 - pandas for table handling and CSV export
 
-Repository Layout
+Project Structure
 -----------------
 
 - `app.py` - Streamlit application and UI flow
@@ -33,8 +42,8 @@ Repository Layout
 - `requirements.txt` - Python dependencies
 - `render.yaml` - optional deployment config
 
-Quickstart
-----------
+Quick Start
+-----------
 
 1. Create and activate a virtual environment.
 
@@ -52,10 +61,10 @@ streamlit run app.py
 
 3. Open `http://localhost:8501` in your browser.
 
-Deployment Notes
-----------------
+Deployment
+----------
 
-The app includes a Render-friendly start command:
+The repository includes an optional `render.yaml` and a Render-friendly start command:
 
 ```bash
 streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
@@ -64,7 +73,7 @@ streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
 Contributing
 ------------
 
-Contributions are welcome. Please keep changes focused and open an issue for larger ideas.
+Contributions are welcome. Keep changes focused and open an issue for larger ideas.
 
 License
 -------
