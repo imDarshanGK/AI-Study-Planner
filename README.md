@@ -109,3 +109,21 @@ Deployment steps:
 3. Connect the GitHub repo.
 4. Use the provided build and start commands.
 5. Deploy and open the live URL.
+
+Supported deployment options (quick):
+
+- Render (recommended): automatic GitHub deploys, free tier available, supports Streamlit with `$PORT` environment variable.
+- Railway: quick deploys from GitHub and simple environment config.
+- Vercel: mainly for frontend, but can run Streamlit via a Docker service.
+- Heroku: still possible using a simple Procfile, but requires manual setup and may have dyno sleep on free tier.
+
+Adding screenshots to README:
+
+1. Create an `images/` folder at the repo root and add your screenshot files (e.g. `images/dashboard.png`).
+2. Reference them in `README.md` using standard Markdown:
+
+```md
+![Dashboard screenshot](images/dashboard.png)
+```
+
+I added a placeholder reference in the docs; commit the actual image files and push to include them in the project.
