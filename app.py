@@ -22,43 +22,189 @@ from scheduler import generate_timetable
 st.set_page_config(page_title="AI Study Planner", layout="wide")
 init_db()
 
-st.title("AI Study Planner")
-st.caption("Plan study sessions with deadline-aware priority scoring and automatic next-task recommendations.")
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+    :root {
+        --bg-main: #0a1220;
+        --bg-panel: #101c30;
+        --bg-muted: #0f1a2a;
+        --text-main: #f6f7fb;
+        --text-soft: #a9b8ce;
+        --brand: #2ec4b6;
+        --brand-strong: #19a898;
+        --accent: #ff9f1c;
+        --border: rgba(255, 255, 255, 0.1);
+        --danger: #ff5a5f;
+    }
+
+    html, body, [class*="css"] {
+        font-family: 'Manrope', sans-serif;
+    }
+
+    .stApp {
+        background:
+            radial-gradient(circle at 8% -20%, rgba(46, 196, 182, 0.20) 0%, rgba(46, 196, 182, 0) 42%),
+            radial-gradient(circle at 100% 0%, rgba(255, 159, 28, 0.16) 0%, rgba(255, 159, 28, 0) 36%),
+            var(--bg-main);
+        color: var(--text-main);
+    }
+
+    .app-shell {
+        border: 1px solid var(--border);
+        background: linear-gradient(145deg, rgba(17, 28, 46, 0.88), rgba(10, 18, 32, 0.92));
+        border-radius: 18px;
+        padding: 1rem 1.2rem;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(2px);
+    }
+
+    .hero-title {
+        font-weight: 800;
+        font-size: clamp(1.9rem, 3.8vw, 3rem);
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+
+    .hero-highlight {
+        color: var(--brand);
+    }
+
+    .hero-subtitle {
+        color: var(--text-soft);
+        margin-top: 0.6rem;
+        margin-bottom: 0;
+        font-size: 1.01rem;
+    }
+
+    .metric-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+        padding: 0.9rem 1rem;
+        min-height: 112px;
+    }
+
+    .metric-label {
+        font-size: 0.82rem;
+        color: var(--text-soft);
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.3rem;
+    }
+
+    .metric-note {
+        font-size: 0.86rem;
+        color: var(--text-soft);
+    }
+
+    .panel-title {
+        font-size: 1.08rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+    }
+
+    .panel-text {
+        color: var(--text-soft);
+        font-size: 0.93rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .chip {
+        display: inline-block;
+        border: 1px solid rgba(46, 196, 182, 0.45);
+        color: #ccfff8;
+        background: rgba(46, 196, 182, 0.14);
+        border-radius: 999px;
+        padding: 0.2rem 0.65rem;
+        font-size: 0.8rem;
+        margin-right: 0.45rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.4rem;
+        background: transparent;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 44px;
+        border-radius: 10px 10px 0 0;
+        padding: 0 1rem;
+        color: var(--text-soft);
+        font-weight: 700;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: rgba(46, 196, 182, 0.14);
+        color: #e9fffd;
+    }
+
+    .stButton > button {
+        border-radius: 10px;
+        border: 1px solid rgba(46, 196, 182, 0.48);
+        background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+        color: #04131e;
+        font-weight: 700;
+    }
+
+    .stButton > button:hover {
+        border-color: rgba(46, 196, 182, 0.85);
+        color: #04131e;
+    }
+
+    .stDataFrame, .stTable {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    @media (max-width: 760px) {
+        .metric-card {
+            min-height: 96px;
+        }
+
+        .hero-subtitle {
+            font-size: 0.94rem;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def render_metric_card(label: str, value: str, note: str) -> None:
+    st.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-note">{note}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 default_hours = float(get_setting("daily_hours", "3"))
 with st.sidebar:
-    st.header("Settings")
+    st.header("Workspace")
+    st.caption("Set your available time. The AI planner uses this to generate daily schedules.")
     daily_hours = st.number_input("Available study time per day (hours)", min_value=0.5, max_value=16.0, value=default_hours, step=0.5)
     if st.button("Save Available Time"):
         set_setting("daily_hours", str(daily_hours))
         st.success("Saved")
-
-st.subheader("1) Add Study Task")
-with st.form("add_task_form"):
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        subject = st.text_input("Subject", placeholder="Data Structures")
-    with col2:
-        title = st.text_input("Task", placeholder="Revise linked lists")
-    with col3:
-        deadline = st.date_input("Deadline", min_value=date.today())
-
-    col4, col5, col6 = st.columns(3)
-    with col4:
-        difficulty = st.slider("Difficulty", min_value=1, max_value=10, value=5)
-    with col5:
-        importance = st.slider("Importance", min_value=1, max_value=10, value=5)
-    with col6:
-        estimated_hours = st.number_input("Estimated hours", min_value=0.5, max_value=200.0, value=2.0, step=0.5)
-
-    submitted = st.form_submit_button("Add Task")
-    if submitted:
-        if not subject.strip() or not title.strip():
-            st.error("Subject and task name are required.")
-        else:
-            add_task(subject, title, deadline, difficulty, importance, estimated_hours)
-            st.success("Task added")
-            st.rerun()
 
 pending_tasks = list_tasks("pending")
 completed_tasks = list_tasks("completed")
@@ -76,105 +222,168 @@ if subject_stats:
 
 recommendation, recommendation_message = recommend_next_task(scored_tasks, weak_subject, recent_subject_hours)
 
-st.subheader("2) Dashboard")
-metric_1, metric_2, metric_3, metric_4 = st.columns(4)
-metric_1.metric("Pending Tasks", len(pending_tasks))
-metric_2.metric("Study Streak (days)", streak_days)
-metric_3.metric("Due Soon Reminders", len(reminders))
-metric_4.metric("Weak Subject", weak_subject)
+completion_rate_total = round((len(completed_tasks) / len(all_tasks)) * 100, 1) if all_tasks else 0.0
 
-if reminders:
-    st.warning("Tasks due soon")
-    for item in reminders:
-        st.write(f"- {item['subject']} | {item['title']} | deadline: {item['deadline']}")
+st.markdown(
+    """
+    <div class="app-shell">
+        <h1 class="hero-title">AI Study Planner <span class="hero-highlight">SaaS Dashboard</span></h1>
+        <p class="hero-subtitle">Adaptive study operations platform with ML-powered prioritization, recommendation intelligence, and execution tracking.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-st.subheader("3) AI Priority Tasks")
-if scored_tasks:
-    priority_df = pd.DataFrame(scored_tasks)[
-        [
-            "id",
-            "subject",
-            "title",
-            "deadline",
-            "difficulty",
-            "importance",
-            "estimated_hours",
-            "logged_hours",
-            "remaining_hours",
-            "priority_score",
-            "completion_probability",
-        ]
-    ]
-    st.dataframe(priority_df, use_container_width=True)
-else:
-    st.info("No pending tasks yet.")
+chip_col_1, chip_col_2, chip_col_3 = st.columns([1.5, 1.5, 5])
+with chip_col_1:
+    st.markdown('<span class="chip">ML Enabled</span>', unsafe_allow_html=True)
+with chip_col_2:
+    st.markdown('<span class="chip">SQLite Backed</span>', unsafe_allow_html=True)
+with chip_col_3:
+    st.markdown('<span class="chip">Auto Timetables</span><span class="chip">Behavior-Aware Recommendations</span>', unsafe_allow_html=True)
 
-st.subheader("4) Auto Timetable")
-days_to_plan = st.slider("Plan days", min_value=1, max_value=30, value=7)
-schedule = generate_timetable(scored_tasks, daily_hours=daily_hours, days=days_to_plan)
-if schedule:
-    st.dataframe(pd.DataFrame(schedule), use_container_width=True)
-else:
-    st.info("No schedule generated yet. Add tasks and available time.")
+metric_col_1, metric_col_2, metric_col_3, metric_col_4 = st.columns(4)
+with metric_col_1:
+    render_metric_card("Pending Tasks", str(len(pending_tasks)), "Tasks waiting for execution")
+with metric_col_2:
+    render_metric_card("Study Streak", str(streak_days), "Consecutive active study days")
+with metric_col_3:
+    render_metric_card("Completion Rate", f"{completion_rate_total}%", "Overall task closure efficiency")
+with metric_col_4:
+    render_metric_card("Weak Subject", weak_subject, "Current improvement focus")
 
-st.subheader("5) Smart Recommendation")
-if recommendation:
-    st.success(recommendation_message)
-    st.write(
-        f"AI score: {recommendation['priority_score']} | "
-        f"completion probability: {recommendation['completion_probability']} | "
-        f"remaining: {recommendation['remaining_hours']}h"
-    )
-else:
-    st.info(recommendation_message)
+tab_plan, tab_ops, tab_insights = st.tabs(["Plan", "Operations", "Insights"])
 
-st.subheader("6) Progress Tracking")
-action_col_1, action_col_2 = st.columns(2)
+with tab_plan:
+    st.markdown('<div class="panel-title">Create New Study Task</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel-text">Capture subject priorities and deadlines. The model will rank and schedule tasks automatically.</div>', unsafe_allow_html=True)
 
-with action_col_1:
-    st.markdown("Mark Task Completed")
-    if pending_tasks:
-        options = {f"#{task['id']} {task['subject']} - {task['title']}": task["id"] for task in pending_tasks}
-        selected_label = st.selectbox("Pending task", list(options.keys()), key="mark_done_select")
-        if st.button("Complete Task"):
-            mark_task_completed(options[selected_label])
-            st.success("Task marked as completed")
-            st.rerun()
-    else:
-        st.write("No pending tasks")
+    with st.form("add_task_form"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            subject = st.text_input("Subject", placeholder="Data Structures")
+        with col2:
+            title = st.text_input("Task", placeholder="Revise linked lists")
+        with col3:
+            deadline = st.date_input("Deadline", min_value=date.today())
 
-with action_col_2:
-    st.markdown("Log Study Session")
-    with st.form("log_form"):
-        all_task_options = {"No task linked": None}
-        for task in list_tasks(None):
-            label = f"#{task['id']} {task['subject']} - {task['title']}"
-            all_task_options[label] = task["id"]
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            difficulty = st.slider("Difficulty", min_value=1, max_value=10, value=5)
+        with col5:
+            importance = st.slider("Importance", min_value=1, max_value=10, value=5)
+        with col6:
+            estimated_hours = st.number_input("Estimated hours", min_value=0.5, max_value=200.0, value=2.0, step=0.5)
 
-        picked = st.selectbox("Task", list(all_task_options.keys()))
-        session_subject = st.text_input("Subject for session")
-        session_date = st.date_input("Study date", value=date.today())
-        session_hours = st.number_input("Hours studied", min_value=0.25, max_value=16.0, value=1.0, step=0.25)
-        if st.form_submit_button("Log Session"):
-            chosen_task_id = all_task_options[picked]
-            resolved_subject = session_subject.strip()
-            if not resolved_subject and chosen_task_id is not None:
-                linked = next((t for t in list_tasks(None) if t["id"] == chosen_task_id), None)
-                if linked:
-                    resolved_subject = linked["subject"]
-
-            if not resolved_subject:
-                st.error("Subject is required.")
+        submitted = st.form_submit_button("Create Task")
+        if submitted:
+            if not subject.strip() or not title.strip():
+                st.error("Subject and task name are required.")
             else:
-                log_study_session(chosen_task_id, resolved_subject, session_date, session_hours)
-                st.success("Study session logged")
+                add_task(subject, title, deadline, difficulty, importance, estimated_hours)
+                st.success("Task created")
                 st.rerun()
 
-st.subheader("7) Weak Subject Analysis")
-if subject_stats:
-    perf_df = pd.DataFrame(subject_stats)
-    perf_df["completion_rate"] = (perf_df["completion_rate"] * 100).round(1)
-    perf_df = perf_df.rename(columns={"completion_rate": "completion_rate_percent"})
-    st.dataframe(perf_df, use_container_width=True)
-else:
-    st.info("Weak subject analysis will appear after adding tasks.")
+    st.markdown('<div class="panel-title">Auto Timetable</div>', unsafe_allow_html=True)
+    plan_days = st.slider("Planning window (days)", min_value=1, max_value=30, value=7)
+    schedule = generate_timetable(scored_tasks, daily_hours=daily_hours, days=plan_days)
+    if schedule:
+        st.dataframe(pd.DataFrame(schedule), use_container_width=True)
+    else:
+        st.info("No schedule available yet. Add tasks and saved daily study time.")
+
+with tab_ops:
+    rec_col, rem_col = st.columns([1.4, 1])
+
+    with rec_col:
+        st.markdown('<div class="panel-title">Smart Recommendation</div>', unsafe_allow_html=True)
+        if recommendation:
+            st.success(recommendation_message)
+            st.write(
+                f"AI score: {recommendation['priority_score']} | "
+                f"completion probability: {recommendation['completion_probability']} | "
+                f"remaining: {recommendation['remaining_hours']}h"
+            )
+        else:
+            st.info(recommendation_message)
+
+    with rem_col:
+        st.markdown('<div class="panel-title">Due Soon</div>', unsafe_allow_html=True)
+        if reminders:
+            for item in reminders:
+                st.write(f"- {item['subject']} | {item['title']} | {item['deadline']}")
+        else:
+            st.write("No urgent reminders.")
+
+    action_col_1, action_col_2 = st.columns(2)
+    with action_col_1:
+        st.markdown('<div class="panel-title">Mark Task Completed</div>', unsafe_allow_html=True)
+        if pending_tasks:
+            options = {f"#{task['id']} {task['subject']} - {task['title']}": task["id"] for task in pending_tasks}
+            selected_label = st.selectbox("Pending task", list(options.keys()), key="mark_done_select")
+            if st.button("Complete Task"):
+                mark_task_completed(options[selected_label])
+                st.success("Task marked as completed")
+                st.rerun()
+        else:
+            st.write("No pending tasks")
+
+    with action_col_2:
+        st.markdown('<div class="panel-title">Log Study Session</div>', unsafe_allow_html=True)
+        with st.form("log_form"):
+            all_task_options = {"No task linked": None}
+            for task in all_tasks:
+                label = f"#{task['id']} {task['subject']} - {task['title']}"
+                all_task_options[label] = task["id"]
+
+            picked = st.selectbox("Task", list(all_task_options.keys()))
+            session_subject = st.text_input("Subject for session")
+            session_date = st.date_input("Study date", value=date.today())
+            session_hours = st.number_input("Hours studied", min_value=0.25, max_value=16.0, value=1.0, step=0.25)
+            if st.form_submit_button("Log Session"):
+                chosen_task_id = all_task_options[picked]
+                resolved_subject = session_subject.strip()
+                if not resolved_subject and chosen_task_id is not None:
+                    linked = next((t for t in all_tasks if t["id"] == chosen_task_id), None)
+                    if linked:
+                        resolved_subject = linked["subject"]
+
+                if not resolved_subject:
+                    st.error("Subject is required.")
+                else:
+                    log_study_session(chosen_task_id, resolved_subject, session_date, session_hours)
+                    st.success("Study session logged")
+                    st.rerun()
+
+with tab_insights:
+    st.markdown('<div class="panel-title">AI Priority Queue</div>', unsafe_allow_html=True)
+    if scored_tasks:
+        priority_df = pd.DataFrame(scored_tasks)[
+            [
+                "id",
+                "subject",
+                "title",
+                "deadline",
+                "difficulty",
+                "importance",
+                "estimated_hours",
+                "logged_hours",
+                "remaining_hours",
+                "priority_score",
+                "completion_probability",
+            ]
+        ]
+        priority_df["completion_probability"] = (priority_df["completion_probability"] * 100).round(1)
+        priority_df = priority_df.rename(columns={"completion_probability": "completion_probability_percent"})
+        st.dataframe(priority_df, use_container_width=True)
+    else:
+        st.info("No pending tasks yet.")
+
+    st.markdown('<div class="panel-title">Weak Subject Analysis</div>', unsafe_allow_html=True)
+    if subject_stats:
+        perf_df = pd.DataFrame(subject_stats)
+        perf_df["completion_rate"] = (perf_df["completion_rate"] * 100).round(1)
+        perf_df = perf_df.rename(columns={"completion_rate": "completion_rate_percent"})
+        st.dataframe(perf_df, use_container_width=True)
+    else:
+        st.info("Weak subject analysis will appear after adding tasks.")
