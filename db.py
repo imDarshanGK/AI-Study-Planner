@@ -282,3 +282,15 @@ def get_recent_subject_hours(days: int = 7) -> list[dict]:
             (start_day,),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_study_logs() -> list[dict]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, task_id, subject, study_date, hours
+            FROM study_logs
+            ORDER BY date(study_date) DESC, id DESC
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]

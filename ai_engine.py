@@ -131,7 +131,7 @@ def recommend_next_task(
     scored_tasks: list[dict],
     weak_subject: str | None,
     recent_subject_hours: list[dict],
-) -> tuple[dict | None, str]:
+) -> tuple[dict | None, str, list[str]]:
     hours_map = {row["subject"]: float(row["total_hours"]) for row in recent_subject_hours}
 
     best_task: dict | None = None
@@ -166,11 +166,11 @@ def recommend_next_task(
             best_reasons = reasons
 
     if best_task is None:
-        return None, "No recommendation available."
+        return None, "No recommendation available.", []
 
     reason_text = ", ".join(best_reasons)
     message = (
         f"Based on your past behavior, you should study {best_task['subject']} today: "
         f"{best_task['title']} ({reason_text})."
     )
-    return best_task, message
+    return best_task, message, best_reasons

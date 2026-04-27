@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 import streamlit as st
@@ -12,6 +12,7 @@ from db import (
     get_study_streak,
     get_subject_performance,
     init_db,
+    list_study_logs,
     list_tasks,
     log_study_session,
     mark_task_completed,
@@ -185,13 +186,14 @@ st.markdown(
 )
 
 
-def render_metric_card(label: str, value: str, note: str) -> None:
+def render_metric_card(label: str, value: str, note: str = "") -> None:
+    note_html = f'<div class="metric-note">{note}</div>' if note else ""
     st.markdown(
         f"""
         <div class="metric-card">
             <div class="metric-label">{label}</div>
             <div class="metric-value">{value}</div>
-            <div class="metric-note">{note}</div>
+            {note_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -199,8 +201,7 @@ def render_metric_card(label: str, value: str, note: str) -> None:
 
 default_hours = float(get_setting("daily_hours", "3"))
 with st.sidebar:
-    st.header("Workspace")
-    st.caption("Set your available time. The AI planner uses this to generate daily schedules.")
+    st.header("Settings")
     daily_hours = st.number_input("Available study time per day (hours)", min_value=0.5, max_value=16.0, value=default_hours, step=0.5)
     if st.button("Save Available Time"):
         set_setting("daily_hours", str(daily_hours))
@@ -220,43 +221,46 @@ if subject_stats:
     weak_row = min(subject_stats, key=lambda row: row["completion_rate"])
     weak_subject = weak_row["subject"]
 
-recommendation, recommendation_message = recommend_next_task(scored_tasks, weak_subject, recent_subject_hours)
+recommendation, recommendation_message, recommendation_reasons = recommend_next_task(scored_tasks, weak_subject, recent_subject_hours)
+
+today = date.today()
+week_end = today + timedelta(days=7)
+overdue_tasks = [task for task in pending_tasks if date.fromisoformat(task["deadline"]) < today]
+due_today_tasks = [task for task in pending_tasks if date.fromisoformat(task["deadline"]) == today]
+due_week_tasks = [
+    task
+    for task in pending_tasks
+    if today < date.fromisoformat(task["deadline"]) <= week_end
+]
+
+study_logs = list_study_logs()
 
 completion_rate_total = round((len(completed_tasks) / len(all_tasks)) * 100, 1) if all_tasks else 0.0
 
 st.markdown(
     """
     <div class="app-shell">
-        <h1 class="hero-title">AI Study Planner <span class="hero-highlight">SaaS Dashboard</span></h1>
-        <p class="hero-subtitle">Adaptive study operations platform with ML-powered prioritization, recommendation intelligence, and execution tracking.</p>
+        <h1 class="hero-title">AI Study Planner</h1>
+        <p class="hero-subtitle">ML-based study planning and progress tracking.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-chip_col_1, chip_col_2, chip_col_3 = st.columns([1.5, 1.5, 5])
-with chip_col_1:
-    st.markdown('<span class="chip">ML Enabled</span>', unsafe_allow_html=True)
-with chip_col_2:
-    st.markdown('<span class="chip">SQLite Backed</span>', unsafe_allow_html=True)
-with chip_col_3:
-    st.markdown('<span class="chip">Auto Timetables</span><span class="chip">Behavior-Aware Recommendations</span>', unsafe_allow_html=True)
-
 metric_col_1, metric_col_2, metric_col_3, metric_col_4 = st.columns(4)
 with metric_col_1:
-    render_metric_card("Pending Tasks", str(len(pending_tasks)), "Tasks waiting for execution")
+    render_metric_card("Pending Tasks", str(len(pending_tasks)))
 with metric_col_2:
-    render_metric_card("Study Streak", str(streak_days), "Consecutive active study days")
+    render_metric_card("Study Streak", str(streak_days))
 with metric_col_3:
-    render_metric_card("Completion Rate", f"{completion_rate_total}%", "Overall task closure efficiency")
+    render_metric_card("Completion Rate", f"{completion_rate_total}%")
 with metric_col_4:
-    render_metric_card("Weak Subject", weak_subject, "Current improvement focus")
+    render_metric_card("Weak Subject", weak_subject)
 
-tab_plan, tab_ops, tab_insights = st.tabs(["Plan", "Operations", "Insights"])
+tab_plan, tab_ops, tab_insights = st.tabs(["Planning", "Execution", "Analytics"])
 
 with tab_plan:
-    st.markdown('<div class="panel-title">Create New Study Task</div>', unsafe_allow_html=True)
-    st.markdown('<div class="panel-text">Capture subject priorities and deadlines. The model will rank and schedule tasks automatically.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel-title">Add Study Task</div>', unsafe_allow_html=True)
 
     with st.form("add_task_form"):
         col1, col2, col3 = st.columns(3)
@@ -284,11 +288,11 @@ with tab_plan:
                 st.success("Task created")
                 st.rerun()
 
-    st.markdown('<div class="panel-title">Auto Timetable</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel-title">Timetable</div>', unsafe_allow_html=True)
     plan_days = st.slider("Planning window (days)", min_value=1, max_value=30, value=7)
     schedule = generate_timetable(scored_tasks, daily_hours=daily_hours, days=plan_days)
     if schedule:
-        st.dataframe(pd.DataFrame(schedule), use_container_width=True)
+        st.dataframe(pd.DataFrame(schedule), use_container_width=True, hide_index=True)
     else:
         st.info("No schedule available yet. Add tasks and saved daily study time.")
 
@@ -296,9 +300,18 @@ with tab_ops:
     rec_col, rem_col = st.columns([1.4, 1])
 
     with rec_col:
-        st.markdown('<div class="panel-title">Smart Recommendation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">Recommendation</div>', unsafe_allow_html=True)
         if recommendation:
             st.success(recommendation_message)
+            if recommendation_reasons:
+                reason_labels = {
+                    "high priority": "high priority",
+                    "low completion rate in this subject": "weak subject",
+                    "low recent study time": "low recent time",
+                    "high delay risk": "delay risk",
+                }
+                readable_tags = [reason_labels.get(reason, reason) for reason in recommendation_reasons]
+                st.caption("Why this task: " + " | ".join(readable_tags))
             st.write(
                 f"AI score: {recommendation['priority_score']} | "
                 f"completion probability: {recommendation['completion_probability']} | "
@@ -308,12 +321,34 @@ with tab_ops:
             st.info(recommendation_message)
 
     with rem_col:
-        st.markdown('<div class="panel-title">Due Soon</div>', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">Reminders</div>', unsafe_allow_html=True)
+        status_col_1, status_col_2, status_col_3 = st.columns(3)
+        with status_col_1:
+            st.caption("Overdue")
+            if overdue_tasks:
+                for item in overdue_tasks[:3]:
+                    st.write(f"- {item['subject']} | {item['title']}")
+            else:
+                st.write("None")
+        with status_col_2:
+            st.caption("Due Today")
+            if due_today_tasks:
+                for item in due_today_tasks[:3]:
+                    st.write(f"- {item['subject']} | {item['title']}")
+            else:
+                st.write("None")
+        with status_col_3:
+            st.caption("Due This Week")
+            if due_week_tasks:
+                for item in due_week_tasks[:3]:
+                    st.write(f"- {item['subject']} | {item['title']}")
+            else:
+                st.write("None")
+
         if reminders:
-            for item in reminders:
-                st.write(f"- {item['subject']} | {item['title']} | {item['deadline']}")
-        else:
-            st.write("No urgent reminders.")
+            st.caption("Upcoming reminders")
+            for item in reminders[:3]:
+                st.write(f"- {item['subject']} | {item['deadline']}")
 
     action_col_1, action_col_2 = st.columns(2)
     with action_col_1:
@@ -356,7 +391,7 @@ with tab_ops:
                     st.rerun()
 
 with tab_insights:
-    st.markdown('<div class="panel-title">AI Priority Queue</div>', unsafe_allow_html=True)
+    st.markdown('<div class="panel-title">Priority Tasks</div>', unsafe_allow_html=True)
     if scored_tasks:
         priority_df = pd.DataFrame(scored_tasks)[
             [
@@ -374,16 +409,73 @@ with tab_insights:
             ]
         ]
         priority_df["completion_probability"] = (priority_df["completion_probability"] * 100).round(1)
-        priority_df = priority_df.rename(columns={"completion_probability": "completion_probability_percent"})
-        st.dataframe(priority_df, use_container_width=True)
+        priority_df = priority_df.rename(columns={"completion_probability": "completion_prob_%"})
+        st.dataframe(priority_df, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Export Priority Tasks CSV",
+            data=priority_df.to_csv(index=False),
+            file_name="priority_tasks.csv",
+            mime="text/csv",
+        )
     else:
         st.info("No pending tasks yet.")
+
+    st.markdown('<div class="panel-title">Analytics Charts</div>', unsafe_allow_html=True)
+
+    if recent_subject_hours:
+        hours_df = pd.DataFrame(recent_subject_hours).rename(columns={"total_hours": "hours_last_7d"})
+        st.caption("Subject-wise study hours (last 7 days)")
+        st.bar_chart(hours_df.set_index("subject"))
+    else:
+        st.info("No subject-hours data yet.")
+
+    completion_trend_rows = []
+    for task in completed_tasks:
+        completed_at = task.get("completed_at")
+        if not completed_at:
+            continue
+        completed_date = datetime.fromisoformat(completed_at).date()
+        week_start = completed_date - timedelta(days=completed_date.weekday())
+        completion_trend_rows.append({"week": week_start.isoformat(), "completed": 1})
+
+    if completion_trend_rows:
+        completion_trend_df = pd.DataFrame(completion_trend_rows)
+        completion_trend_df = completion_trend_df.groupby("week", as_index=False)["completed"].sum().sort_values("week")
+        st.caption("Weekly completion trend")
+        st.line_chart(completion_trend_df.set_index("week"))
+    else:
+        st.info("No completion trend data yet.")
+
+    if scored_tasks:
+        priority_bins = pd.cut(
+            pd.Series([task["priority_score"] for task in scored_tasks]),
+            bins=[-1, 10, 20, 30, 100],
+            labels=["0-10", "11-20", "21-30", "31+"],
+        )
+        dist_df = priority_bins.value_counts().sort_index().rename_axis("priority_band").reset_index(name="tasks")
+        st.caption("Priority distribution")
+        st.bar_chart(dist_df.set_index("priority_band"))
+    else:
+        st.info("No priority distribution data yet.")
 
     st.markdown('<div class="panel-title">Weak Subject Analysis</div>', unsafe_allow_html=True)
     if subject_stats:
         perf_df = pd.DataFrame(subject_stats)
         perf_df["completion_rate"] = (perf_df["completion_rate"] * 100).round(1)
         perf_df = perf_df.rename(columns={"completion_rate": "completion_rate_percent"})
-        st.dataframe(perf_df, use_container_width=True)
+        st.dataframe(perf_df, use_container_width=True, hide_index=True)
     else:
         st.info("Weak subject analysis will appear after adding tasks.")
+
+    st.markdown('<div class="panel-title">Study Sessions</div>', unsafe_allow_html=True)
+    if study_logs:
+        logs_df = pd.DataFrame(study_logs)
+        st.dataframe(logs_df, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Export Study Sessions CSV",
+            data=logs_df.to_csv(index=False),
+            file_name="study_sessions.csv",
+            mime="text/csv",
+        )
+    else:
+        st.info("No study session logs yet.")
