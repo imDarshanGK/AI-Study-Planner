@@ -1,5 +1,100 @@
 # AI Study Planner
 
+AI Study Planner — a compact, practical study planning app that demonstrates a full-stack workflow:
+
+- Python backend logic
+- Streamlit user interface
+- SQLite persistence
+- Real machine learning with scikit-learn
+
+This repository contains a working MVP you can run locally or deploy to a simple cloud host. It focuses on real features (no fake claims): task input, priority scoring, timetable generation, study logging, and behavior-aware recommendations.
+## Overview
+
+Key capabilities:
+
+- Task capture: subject, title, deadline, difficulty, importance, estimated hours
+- AI-driven priority scoring: deadline pressure, difficulty, importance, workload
+- ML adjustments: a LinearRegression model refines scores from historical outcomes
+- Completion probability: RandomForestClassifier predicts completion risk
+- Auto timetable: allocate available daily hours across upcoming days
+- Progress tracking: study session logs, study streak, weak-subject analysis
+- Recommendations: concise, data-backed suggestion with reasons (e.g. "low recent time", "weak subject")
+## Core Features
+
+- Task input and persistence (`tasks` table in SQLite)
+- Study session logging (`study_logs` table)
+- AI priority scoring and completion prediction (`ai_engine.py`)
+- Automatic timetable generator (`scheduler.py`)
+- Analytics and CSV export for tasks and sessions
+- Simple Streamlit UI with a professional dashboard
+## How it works (brief)
+
+1. Heuristic score is computed per task using deadline pressure, difficulty, importance, and estimated hours.
+2. When enough completed-task history exists the app trains a LinearRegression model to adjust priority scores.
+3. A RandomForestClassifier estimates completion probability using difficulty, importance, days left, estimated hours, and logged progress ratio.
+4. The final rank = heuristic + learned adjustment + a risk boost for low completion probability. Recommendations show concise reason tags.
+## Tech stack
+
+- Python 3.10+
+- Streamlit (UI)
+- scikit-learn (ML)
+- SQLite (persistence)
+- pandas (tables & CSV export)
+## Project structure
+
+- `app.py` — Streamlit UI and user flows
+- `db.py` — SQLite schema and data access helpers
+- `ai_engine.py` — priority scoring, ML training, recommendation logic
+- `scheduler.py` — timetable generation
+- `requirements.txt` — Python dependencies
+- `render.yaml` — (optional) Render deploy config
+## Quick start (local)
+
+1. Create and activate a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies and run
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Open `http://localhost:8501` in your browser.
+## Deployment
+
+Recommended quick option: Render (auto-deploy from GitHub). The repo already includes `render.yaml` and a Streamlit server command that uses `$PORT`.
+
+Other options: Railway, Heroku (requires Procfile), Docker on any host.
+
+## Screenshots
+
+Add screenshots to the repo under `images/` and reference them in this README. Example:
+
+```md
+![Dashboard screenshot](images/dashboard.png)
+```
+
+## What to include in your portfolio write-up
+
+- Short problem statement (what the app solves)
+- Key technical choices (Streamlit, scikit-learn, SQLite)
+- A sentence about how the ML models are used (scoring + completion probability)
+- One-sentence deployment note (Render or Railway link)
+
+## Contributing
+
+Contributions welcome — open an issue or PR. Keep changes small and focused.
+
+## License
+
+MIT — see the `LICENSE` file.
+# AI Study Planner
+
 AI Study Planner is a real, working project that combines:
 - Python backend logic
 - Streamlit user interface
