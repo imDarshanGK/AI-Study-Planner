@@ -294,3 +294,51 @@ def list_study_logs() -> list[dict]:
             """
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def get_daily_study_consistency(days: int = 14) -> list[dict]:
+    start = date.today() - timedelta(days=max(1, days) - 1)
+
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT study_date, COALESCE(SUM(hours), 0) AS total_hours
+            FROM study_logs
+            WHERE date(study_date) >= date(?)
+            GROUP BY study_date
+            ORDER BY study_date ASC
+            """,
+            (start.isoformat(),),
+        ).fetchall()
+
+    raw_map = {row["study_date"]: float(row["total_hours"]) for row in rows}
+    timeline: list[dict] = []
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        day_iso = day.isoformat()
+        total_hours = raw_map.get(day_iso, 0.0)
+        timeline.append(
+            {
+                "study_date": day_iso,
+                "total_hours": round(total_hours, 2),
+                "active_day": 1 if total_hours > 0 else 0,
+            }
+        )
+
+    return timeline
+
+
+def get_subject_daily_hours(days: int = 14) -> list[dict]:
+    start = (date.today() - timedelta(days=max(1, days) - 1)).isoformat()
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT subject, study_date, COALESCE(SUM(hours), 0) AS total_hours
+            FROM study_logs
+            WHERE date(study_date) >= date(?)
+            GROUP BY subject, study_date
+            ORDER BY subject ASC, study_date ASC
+            """,
+            (start,),
+        ).fetchall()
+    return [dict(row) for row in rows]
