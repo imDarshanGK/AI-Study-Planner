@@ -3,13 +3,15 @@ from datetime import date, datetime, timedelta
 import pandas as pd
 import streamlit as st
 
-from ai_engine import recommend_next_task, score_tasks
+from ai_engine import generate_focus_message, rank_delay_risk_tasks, recommend_next_task, score_tasks
 from db import (
     add_task,
+    get_daily_study_consistency,
     get_due_reminders,
     get_recent_subject_hours,
     get_setting,
     get_study_streak,
+    get_subject_daily_hours,
     get_subject_performance,
     init_db,
     list_study_logs,
@@ -18,10 +20,15 @@ from db import (
     mark_task_completed,
     set_setting,
 )
-from scheduler import generate_timetable
+from scheduler import generate_timetable, generate_weekly_action_plan
 
 st.set_page_config(page_title="AI Study Planner", page_icon="images/favicon.svg", layout="wide")
 init_db()
+
+if "weekly_plan_rows" not in st.session_state:
+    st.session_state["weekly_plan_rows"] = []
+if "weekly_plan_locked" not in st.session_state:
+    st.session_state["weekly_plan_locked"] = False
 
 st.markdown(
     """
@@ -234,6 +241,10 @@ due_week_tasks = [
 ]
 
 study_logs = list_study_logs()
+consistency_rows = get_daily_study_consistency(days=28)
+subject_daily_hours = get_subject_daily_hours(days=14)
+risky_tasks = rank_delay_risk_tasks(scored_tasks, limit=8)
+coach_message = generate_focus_message(recommendation, weak_subject, recent_subject_hours, risky_tasks)
 
 completion_rate_total = round((len(completed_tasks) / len(all_tasks)) * 100, 1) if all_tasks else 0.0
 
@@ -391,6 +402,129 @@ with tab_ops:
                     st.rerun()
 
 with tab_insights:
+    st.markdown('<div class="panel-title">Progress Analytics Dashboard</div>', unsafe_allow_html=True)
+
+    consistency_df = pd.DataFrame(consistency_rows)
+    if not consistency_df.empty:
+        total_hours_7d = round(consistency_df.tail(7)["total_hours"].sum(), 1)
+        active_days_7d = int(consistency_df.tail(7)["active_day"].sum())
+        avg_daily_7d = round(total_hours_7d / 7.0, 2)
+    else:
+        total_hours_7d = 0.0
+        active_days_7d = 0
+        avg_daily_7d = 0.0
+
+    kpi_1, kpi_2, kpi_3 = st.columns(3)
+    with kpi_1:
+        render_metric_card("Hours (Last 7 Days)", f"{total_hours_7d}h")
+    with kpi_2:
+        render_metric_card("Active Days (Last 7)", str(active_days_7d))
+    with kpi_3:
+        render_metric_card("Avg Daily Hours", f"{avg_daily_7d}h")
+
+    if not consistency_df.empty:
+        st.caption("Weekly consistency trend (last 28 days)")
+        st.line_chart(consistency_df.set_index("study_date")[["total_hours"]])
+    else:
+        st.info("No consistency data yet. Log study sessions to unlock trend insights.")
+
+    st.markdown('<div class="panel-title">AI Coach</div>', unsafe_allow_html=True)
+    st.success(coach_message)
+
+    st.markdown('<div class="panel-title">Predicted Delay Risk</div>', unsafe_allow_html=True)
+    if risky_tasks:
+        risk_df = pd.DataFrame(risky_tasks)[
+            [
+                "subject",
+                "title",
+                "deadline",
+                "days_left",
+                "remaining_hours",
+                "completion_probability",
+                "delay_risk_score",
+            ]
+        ]
+        risk_df["completion_probability"] = (risk_df["completion_probability"] * 100).round(1)
+        risk_df = risk_df.rename(columns={"completion_probability": "completion_prob_%"})
+        st.dataframe(risk_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No pending tasks available for risk analysis.")
+
+    st.markdown('<div class="panel-title">Weekly Action Plan</div>', unsafe_allow_html=True)
+    plan_col_1, plan_col_2 = st.columns(2)
+    with plan_col_1:
+        weekly_days = st.slider("Weekly planning window (days)", min_value=3, max_value=14, value=7, key="weekly_days")
+    with plan_col_2:
+        weekly_daily_hours = st.number_input(
+            "Daily hours for weekly plan",
+            min_value=0.5,
+            max_value=16.0,
+            value=float(daily_hours),
+            step=0.5,
+            key="weekly_daily_hours",
+        )
+
+    plan_actions_1, plan_actions_2, plan_actions_3 = st.columns(3)
+    with plan_actions_1:
+        generate_clicked = st.button("Generate Weekly Plan", disabled=st.session_state["weekly_plan_locked"])
+    with plan_actions_2:
+        lock_clicked = st.button(
+            "Lock Plan",
+            disabled=st.session_state["weekly_plan_locked"] or not st.session_state["weekly_plan_rows"],
+        )
+    with plan_actions_3:
+        unlock_clicked = st.button("Unlock Plan", disabled=not st.session_state["weekly_plan_locked"])
+
+    if generate_clicked:
+        generated_plan = generate_weekly_action_plan(
+            scored_tasks=scored_tasks,
+            daily_hours=float(weekly_daily_hours),
+            weak_subject=weak_subject,
+            days=int(weekly_days),
+        )
+        st.session_state["weekly_plan_rows"] = generated_plan
+        st.session_state["weekly_plan_locked"] = False
+
+    if lock_clicked:
+        st.session_state["weekly_plan_locked"] = True
+
+    if unlock_clicked:
+        st.session_state["weekly_plan_locked"] = False
+
+    weekly_plan_rows = st.session_state.get("weekly_plan_rows", [])
+    if st.session_state.get("weekly_plan_locked"):
+        st.caption("Plan is locked. Unlock to regenerate.")
+
+    if weekly_plan_rows:
+        weekly_plan_df = pd.DataFrame(weekly_plan_rows)
+        st.dataframe(weekly_plan_df, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Download Weekly Plan CSV",
+            data=weekly_plan_df.to_csv(index=False),
+            file_name="weekly_action_plan.csv",
+            mime="text/csv",
+        )
+    else:
+        st.caption("Click Generate Weekly Plan to create an actionable risk-aware plan.")
+
+    st.markdown('<div class="panel-title">Subject Activity Heatmap (Last 14 Days)</div>', unsafe_allow_html=True)
+    if subject_daily_hours:
+        heatmap_df = pd.DataFrame(subject_daily_hours)
+        pivot = (
+            heatmap_df.pivot_table(
+                index="subject",
+                columns="study_date",
+                values="total_hours",
+                aggfunc="sum",
+                fill_value=0.0,
+            )
+            .sort_index()
+            .round(2)
+        )
+        st.dataframe(pivot, use_container_width=True)
+    else:
+        st.info("No subject-hour history yet for heatmap view.")
+
     st.markdown('<div class="panel-title">Priority Tasks</div>', unsafe_allow_html=True)
     if scored_tasks:
         priority_df = pd.DataFrame(scored_tasks)[
