@@ -1,98 +1,129 @@
-AI Study Planner
-=================
+# AI Study Planner
 
-AI Study Planner is a zero-fuss study planning app built with Python, Streamlit, SQLite, and scikit-learn. It turns tasks, deadlines, and available study time into a practical daily plan with simple machine-learning-based scoring.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![SQLite](https://img.shields.io/badge/SQLite-storage-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![scikit--learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
 
-Task planning, priority scoring, timetable generation, study logging, and recommendation support are all included in one small project.
+AI Study Planner is a practical study-planning app that turns tasks, deadlines, available hours, and progress history into a clear daily and weekly action plan.
 
-Features
---------
+It combines a clean Streamlit UI, SQLite persistence, and machine-learning-based task scoring to help students decide what to study next and how to stay consistent.
 
-- Add tasks with subject, title, deadline, difficulty, importance, and estimated hours.
-- Rank tasks by urgency and learned priority adjustment from historical data.
-- Estimate completion risk for pending tasks.
-- Generate a daily timetable from available study hours.
-- Log study sessions and review progress over time.
-- Export tasks and study logs as CSV.
-- View a progress analytics dashboard with weekly consistency and KPI cards.
-- Track subject-wise activity heatmap for the last 14 days.
-- See predicted delay-risk tasks ranked by AI risk score.
-- Get an AI coach focus message combining urgency, weakness, and low-recent-focus signals.
-- Generate a one-click weekly action plan with risk-first ordering and weak-subject balancing.
+## At a Glance
 
-How it works
-------------
+- Task planning with subject, deadline, difficulty, importance, and estimated hours.
+- AI-assisted priority scoring and completion-risk prediction.
+- Auto-generated daily timetable and weekly action plan.
+- Study session logging, streak tracking, and subject performance analysis.
+- Analytics dashboard with consistency trends, risk insights, and focus recommendations.
 
-1. The app computes a heuristic priority score from deadline pressure, difficulty, importance, and estimated workload.
+## What It Does
+
+### Planning
+
+- Add study tasks with deadlines and effort estimates.
+- Rank tasks by urgency, workload, and learned priority adjustment.
+- Generate a timetable based on your available study hours.
+
+### Execution
+
+- Mark tasks as completed.
+- Log study sessions by subject or linked task.
+- Track progress events and streaks over time.
+
+### Analytics
+
+- View weekly consistency and study-hour KPIs.
+- Spot weak subjects and low-focus areas.
+- Review predicted delay-risk tasks.
+- Generate one-click weekly plans with lock/unlock mode.
+
+## AI Logic
+
+The app uses a layered approach:
+
+1. A heuristic score estimates urgency from deadline pressure, difficulty, importance, and workload.
 2. When enough history exists, scikit-learn models refine the score and estimate completion probability.
-3. The scheduler spreads study time across upcoming days based on the final priority order.
-4. Study logs and task updates feed the next recommendation cycle.
+3. The recommendation engine combines task priority with weak-subject and recent-focus signals.
+4. The weekly planner converts those insights into a balanced, actionable schedule.
 
-Tech Stack
-----------
+## Tech Stack
 
-- Python 3.10+
-- Streamlit for the UI
-- SQLite for persistence
-- scikit-learn for scoring and prediction
-- pandas for table handling and CSV export
+- Python
+- Streamlit
+- SQLite
+- scikit-learn
+- pandas
 
-Project Structure
------------------
+## Project Structure
 
-- `app.py` - Streamlit application and UI flow
-- `db.py` - database schema and data access helpers
-- `ai_engine.py` - scoring, model training, and recommendation logic
-- `scheduler.py` - timetable generation utilities
-- `requirements.txt` - Python dependencies
-- `render.yaml` - optional deployment config
+| File | Purpose |
+| --- | --- |
+| `app.py` | Streamlit UI and feature flow |
+| `db.py` | SQLite schema and data access helpers |
+| `ai_engine.py` | Priority scoring, risk prediction, and recommendation logic |
+| `scheduler.py` | Daily timetable and weekly plan generation |
+| `requirements.txt` | Python dependencies |
+| `render.yaml` | Render deployment config |
 
-Quick Start
------------
+## Quick Start
 
-1. Create and activate a virtual environment.
+1. Create a virtual environment.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-2. Install dependencies and run the app.
+2. Install dependencies.
 
 ```bash
 pip install -r requirements.txt
+```
+
+3. Run the app.
+
+```bash
 streamlit run app.py
 ```
 
-3. Open `http://localhost:8501` in your browser.
+4. Open `http://localhost:8501` in your browser.
 
-Deployment
-----------
+## Deployment
 
-The repository includes an optional `render.yaml` and a Render-friendly start command:
+This repo includes a Render-friendly start command:
 
 ```bash
 streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
 ```
 
-V2 Upgrade: Analytics Dashboard
--------------------------------
+If you deploy on Render, connect the repo as a web service and use the command above.
 
-The latest upgrade adds a practical insight layer on top of planning and execution.
+## Current Feature Set
 
-- Progress KPI cards: last 7 days total study hours, active days, and average daily hours.
-- Weekly consistency trend: line chart over the last 28 days.
-- Subject activity heatmap: subject x day matrix over the last 14 days.
-- Predicted delay risk: highest-risk pending tasks with deadline pressure and completion probability.
-- AI coach message: daily focus recommendation with clear behavior-aware reasoning.
-- Weekly action plan: one-click generated schedule with lock/unlock mode and downloadable CSV.
+- Task input system
+- AI priority scoring
+- Completion probability estimation
+- Daily timetable generator
+- Study streak tracking
+- Weak-subject analysis
+- Progress analytics dashboard
+- Subject activity heatmap
+- Delay-risk ranking
+- AI coach recommendation text
+- Weekly action plan generator
+- Lock/unlock mode for weekly plans
 
-Contributing
-------------
+## Notes
+
+- This project is intentionally practical and internship-ready.
+- It does not claim advanced reinforcement learning.
+- SQLite stores tasks, study sessions, and progress events locally.
+
+## Contributing
 
 Contributions are welcome. Keep changes focused and open an issue for larger ideas.
 
-License
--------
+## License
 
-MIT - see the `LICENSE` file for details.
+MIT License. See the [LICENSE](LICENSE) file for the full terms.
