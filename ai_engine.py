@@ -174,3 +174,60 @@ def recommend_next_task(
         f"{best_task['title']} ({reason_text})."
     )
     return best_task, message, best_reasons
+
+
+def rank_delay_risk_tasks(scored_tasks: list[dict], limit: int = 5) -> list[dict]:
+    risky: list[dict] = []
+
+    for task in scored_tasks:
+        if task.get("status") != "pending":
+            continue
+
+        probability = float(task.get("completion_probability", 0.5))
+        days_left = _days_left(task["deadline"])
+        urgency = max(0.0, 1 - (max(days_left, 0) / 14.0))
+        risk_score = round(((1 - probability) * 0.7 + urgency * 0.3) * 100, 1)
+
+        enriched = dict(task)
+        enriched["delay_risk_score"] = risk_score
+        enriched["days_left"] = days_left
+        risky.append(enriched)
+
+    risky.sort(key=lambda row: (-row["delay_risk_score"], row["deadline"]))
+    return risky[:limit]
+
+
+def generate_focus_message(
+    recommendation: dict | None,
+    weak_subject: str | None,
+    recent_subject_hours: list[dict],
+    risky_tasks: list[dict],
+) -> str:
+    if recommendation is None:
+        return "No pending tasks yet. Add tasks to unlock a personalized study focus plan."
+
+    subject = recommendation["subject"]
+    title = recommendation["title"]
+
+    recent_hours = 0.0
+    for row in recent_subject_hours:
+        if row["subject"] == subject:
+            recent_hours = float(row["total_hours"])
+            break
+
+    weak_signal = weak_subject and weak_subject != "None" and subject == weak_subject
+    risk_signal = risky_tasks and risky_tasks[0]["id"] == recommendation["id"]
+
+    notes: list[str] = []
+    if weak_signal:
+        notes.append("this is currently your weakest subject")
+    if recent_hours < 2:
+        notes.append("recent time invested here is low")
+    if risk_signal:
+        notes.append("delay risk is high for this task")
+
+    if notes:
+        reason = "; ".join(notes)
+        return f"Today focus on {subject}: {title} because {reason}."
+
+    return f"Today focus on {subject}: {title}. It has the strongest combined urgency and completion impact."
