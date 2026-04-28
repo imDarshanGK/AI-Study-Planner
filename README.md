@@ -14,6 +14,11 @@ Features
 - Generate a daily timetable from available study hours.
 - Log study sessions and review progress over time.
 - Export tasks and study logs as CSV.
+- View a progress analytics dashboard with weekly consistency and KPI cards.
+- Track subject-wise activity heatmap for the last 14 days.
+- See predicted delay-risk tasks ranked by AI risk score.
+- Get an AI coach focus message combining urgency, weakness, and low-recent-focus signals.
+- Generate a one-click weekly action plan with risk-first ordering and weak-subject balancing.
 
 How it works
 ------------
@@ -69,6 +74,18 @@ The repository includes an optional `render.yaml` and a Render-friendly start co
 ```bash
 streamlit run app.py --server.address 0.0.0.0 --server.port $PORT
 ```
+
+V2 Upgrade: Analytics Dashboard
+-------------------------------
+
+The latest upgrade adds a practical insight layer on top of planning and execution.
+
+- Progress KPI cards: last 7 days total study hours, active days, and average daily hours.
+- Weekly consistency trend: line chart over the last 28 days.
+- Subject activity heatmap: subject x day matrix over the last 14 days.
+- Predicted delay risk: highest-risk pending tasks with deadline pressure and completion probability.
+- AI coach message: daily focus recommendation with clear behavior-aware reasoning.
+- Weekly action plan: one-click generated schedule with lock/unlock mode and downloadable CSV.
 
 Contributing
 ------------
